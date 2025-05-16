@@ -1,69 +1,79 @@
-const canvas = document.getElementById("game");
+const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const gridSize = 20;
-let snake = [{ x: 160, y: 200 }];
+let snake = [{ x: 10, y: 10 }];
+let food = { x: 15, y: 15 };
 let direction = "right";
-let food = spawnFood();
-let gameInterval;
+let gridSize = 20;
+let tileSize = canvas.width / gridSize;
 
-document.addEventListener("keydown", changeDirection);
-
-function changeDirection(e) {
-  const key = e.key;
-  if (key === "ArrowUp" && direction !== "down") direction = "up";
-  if (key === "ArrowDown" && direction !== "up") direction = "down";
-  if (key === "ArrowLeft" && direction !== "right") direction = "left";
-  if (key === "ArrowRight" && direction !== "left") direction = "right";
-}
-
-function spawnFood() {
-  const x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
-  const y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
-  return { x, y };
-}
-
-function draw() {
-  ctx.fillStyle = "#222";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "lime";
-  snake.forEach(segment => ctx.fillRect(segment.x, segment.y, gridSize, gridSize));
-
-  ctx.fillStyle = "red";
-  ctx.fillRect(food.x, food.y, gridSize, gridSize);
+function startGame() {
+  document.body.focus();
+  document.addEventListener("keydown", keyDown);
+  setInterval(update, 150);
 }
 
 function update() {
   const head = { ...snake[0] };
-  if (direction === "up") head.y -= gridSize;
-  if (direction === "down") head.y += gridSize;
-  if (direction === "left") head.x -= gridSize;
-  if (direction === "right") head.x += gridSize;
 
-  // Game over if hit wall or itself
+  switch (direction) {
+    case "up": head.y -= 1; break;
+    case "down": head.y += 1; break;
+    case "left": head.x -= 1; break;
+    case "right": head.x += 1; break;
+  }
+
   if (
-    head.x < 0 || head.y < 0 ||
-    head.x >= canvas.width || head.y >= canvas.height ||
-    snake.some(segment => segment.x === head.x && segment.y === head.y)
+    head.x < 0 || head.x >= gridSize ||
+    head.y < 0 || head.y >= gridSize ||
+    snake.some(seg => seg.x === head.x && seg.y === head.y)
   ) {
-    clearInterval(gameInterval);
     alert("Game Over!");
+    snake = [{ x: 10, y: 10 }];
+    direction = "right";
+    food = { x: 15, y: 15 };
     return;
   }
 
   snake.unshift(head);
 
   if (head.x === food.x && head.y === food.y) {
-    food = spawnFood();
+    food = {
+      x: Math.floor(Math.random() * gridSize),
+      y: Math.floor(Math.random() * gridSize),
+    };
   } else {
     snake.pop();
   }
-}
 
-function gameLoop() {
-  update();
   draw();
 }
 
-gameInterval = setInterval(gameLoop, 150);
+function draw() {
+  ctx.fillStyle = "#111";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "lime";
+  for (let s of snake) {
+    ctx.fillRect(s.x * tileSize, s.y * tileSize, tileSize - 2, tileSize - 2);
+  }
+
+  ctx.fillStyle = "red";
+  ctx.fillRect(food.x * tileSize, food.y * tileSize, tileSize - 2, tileSize - 2);
+}
+
+function keyDown(e) {
+  switch (e.key) {
+    case "ArrowUp": if (direction !== "down") direction = "up"; break;
+    case "ArrowDown": if (direction !== "up") direction = "down"; break;
+    case "ArrowLeft": if (direction !== "right") direction = "left"; break;
+    case "ArrowRight": if (direction !== "left") direction = "right"; break;
+  }
+}
+
+function changeDirection(dir) {
+  if (dir === "up" && direction !== "down") direction = "up";
+  if (dir === "down" && direction !== "up") direction = "down";
+  if (dir === "left" && direction !== "right") direction = "left";
+  if (dir === "right" && direction !== "left") direction = "right";
+}
